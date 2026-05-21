@@ -8,7 +8,7 @@ import tensorflow as tf
 from keras.src.saving import load_model
 from tensorflow.keras.applications.convnext import preprocess_input
 
-interpreter = tf.lite.Interpreter(model_path='convnext_best_rps_model_ever.tflite')
+interpreter = tf.lite.Interpreter(model_path='convnext_best_rps_model_ever_v0.0.1.tflite')
 interpreter.allocate_tensors()
 
 input_details = interpreter.get_input_details()
