@@ -86,7 +86,7 @@ def play_game(predicted_move, pred_confidence, move_history):
         move_history: List of user's moves
 
     Returns:
-        Tuple of (ai_move, result_text)
+        Tuple of (ai_move, result_text, winner_text)
     """
     move_counter = {
         'rock': 'paper',
@@ -105,9 +105,9 @@ def play_game(predicted_move, pred_confidence, move_history):
         )
 
     # Determine winner
+    winner_text = ""
     if len(move_history) > 0:
         user_move = move_history[-1].lower()
-
         if user_move == ai_move:
             winner_text = "It's a tie!"
         elif (user_move == 'rock' and ai_move == 'paper') or \
@@ -117,9 +117,7 @@ def play_game(predicted_move, pred_confidence, move_history):
         else:
             winner_text = "You win!"
 
-        result_text += " | " + winner_text
-
-    return ai_move, result_text
+    return ai_move, result_text, winner_text
 
 
 
@@ -127,7 +125,8 @@ vid = cv2.VideoCapture(0)
 
 move_history = []
 game_color = (0, 255, 0)
-last_result_text = ""  # Store the last game result
+last_result_text = ""
+last_winner_text = ""
 
 while True:
     ret, frame = vid.read()
@@ -135,20 +134,25 @@ while True:
     class_name, confidence = inference(frame)
     display_text = "You are currently showing " + "{}  Confidence: {:.2f}%".format(class_name, confidence)
 
-    cv2.putText(frame, display_text, (10, 100),
+    cv2.putText(frame, display_text, (10, 25),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.60, (0, 0, 0), 2, 2)
 
-    prompt_text =  "Press Space to Play!"
-    cv2.putText(frame, prompt_text, (10, 130),
+    prompt_text = "Press Space to Play!"
+    cv2.putText(frame, prompt_text, (10, 50),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.60, (0, 0, 0), 2, 2)
 
     # Always display the last game result if one exists
     if last_result_text:
-        cv2.putText(frame, last_result_text, (10, 160),
+        cv2.putText(frame, last_result_text, (10, 75),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.60, (0, 255, 0), 2, 2)
+
+    if last_winner_text:
+        cv2.putText(frame, last_winner_text, (220, 450),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.80, (0, 0, 255), 3, 3)
 
     cv2.imshow('Camera feed', frame)
 
@@ -160,9 +164,9 @@ while True:
         move_history.append(class_name)
         if len(move_history) >= 5:
             predicted_move, pred_confidence = predict_next_move(move_history)
-            ai_move, last_result_text = play_game(predicted_move, pred_confidence, move_history)
+            ai_move, last_result_text, last_winner_text = play_game(predicted_move, pred_confidence, move_history)
         else:
-            ai_move, last_result_text = play_game(None, 0, move_history)
+            ai_move, last_result_text, last_winner_text = play_game(None, 0, move_history)
 
 # After the loop release the cap object
 vid.release()
