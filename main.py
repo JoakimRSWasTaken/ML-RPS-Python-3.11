@@ -120,6 +120,26 @@ def play_game(predicted_move, pred_confidence, move_history):
     return ai_move, result_text, winner_text
 
 
+def update_game_history(winner_text, move_history, predicted_move, ai_move):
+    """Tracks game outcomes and maintains win rate statistics.
+
+    Args:
+        winner_text: Result of the game ("You win!", "AI wins!", "It's a tie!")
+        move_history: List of user's moves
+        predicted_move: The move predicted by LSTM
+        ai_move: The move chosen by AI
+
+    Returns:
+        Updated game_results list
+    """
+    game_outcome = {
+        'user_move': move_history[-1] if move_history else 'None',
+        'ai_move': ai_move,
+        'result': winner_text,
+        'predicted': predicted_move
+    }
+    return game_outcome
+
 
 vid = cv2.VideoCapture(0)
 
@@ -127,6 +147,7 @@ move_history = []
 game_color = (0, 255, 0)
 last_result_text = ""
 last_winner_text = ""
+game_results = []
 
 while True:
     ret, frame = vid.read()
@@ -143,7 +164,6 @@ while True:
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.60, (0, 0, 0), 2, 2)
 
-    # Always display the last game result if one exists
     if last_result_text:
         cv2.putText(frame, last_result_text, (10, 75),
                     cv2.FONT_HERSHEY_SIMPLEX,
@@ -167,6 +187,21 @@ while True:
             ai_move, last_result_text, last_winner_text = play_game(predicted_move, pred_confidence, move_history)
         else:
             ai_move, last_result_text, last_winner_text = play_game(None, 0, move_history)
+
+        # Track game outcome
+        game_results.append(
+            update_game_history(last_winner_text, move_history, predicted_move if len(move_history) >= 5 else None,
+                                ai_move))
+
+        # Print statistics
+        wins = sum(1 for g in game_results if g['result'] == "You win!")
+        total_games = len(game_results)
+        win_rate = (wins / total_games * 100) if total_games > 0 else 0
+
+        print(f"\n=== Win Rate: {win_rate:.1f}% ({wins}/{total_games}) ===")
+        print("Last 5 games:")
+        for i, game in enumerate(game_results[-5:], 1):
+            print(f"  {i}. You: {game['user_move']} | AI: {game['ai_move']} | {game['result']}")
 
 # After the loop release the cap object
 vid.release()
